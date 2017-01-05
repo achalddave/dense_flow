@@ -4,6 +4,7 @@ import cv2
 import glob
 import os
 from multiprocessing import Pool, current_process
+from functools import partial
 
 import argparse
 out_path = ''
@@ -30,7 +31,7 @@ def dump_frames(vid_path):
     return file_list
 
 
-def run_optical_flow(vid_item, dev_id=0):
+def run_optical_flow(vid_item, dev_id=0, warp=False):
     vid_path = vid_item[0]
     vid_id = vid_item[1]
     vid_name = vid_path.split('/')[-1].split('.')[0]
@@ -46,31 +47,16 @@ def run_optical_flow(vid_item, dev_id=0):
     flow_x_path = '{}/flow_x'.format(out_full_path)
     flow_y_path = '{}/flow_y'.format(out_full_path)
 
-    cmd = './build/extract_gpu -f={} -x={} -y={} -i={} -b=20 -t=1 -d={} -s=1 -o=zip'.format(vid_path, flow_x_path, flow_y_path, image_path, dev_id)
+    if warp:
+        cmd = './build/extract_warp_gpu -f={} -x={} -y={} -b=20 -t=1 -d={} -s=1 -o=zip'.format(vid_path, flow_x_path, flow_y_path, dev_id)
+    else:
+        cmd = './build/extract_gpu -f={} -x={} -y={} -i={} -b=20 -t=1 -d={} -s=1 -o=zip'.format(vid_path, flow_x_path, flow_y_path, image_path, dev_id)
 
     os.system(cmd)
-    print '{} {} done'.format(vid_id, vid_name)
-    return True
-
-def run_warp_optical_flow(vid_item, dev_id=0):
-    vid_path = vid_item[0]
-    vid_id = vid_item[1]
-    vid_name = vid_path.split('/')[-1].split('.')[0]
-    out_full_path = os.path.join(out_path, vid_name)
-    try:
-        os.mkdir(out_full_path)
-    except OSError:
-        pass
-
-    current = current_process()
-    dev_id = int(current._identity[0]) - 1
-    flow_x_path = '{}/flow_x'.format(out_full_path)
-    flow_y_path = '{}/flow_y'.format(out_full_path)
-
-    cmd = './build/extract_warp_gpu -f {} -x {} -y {} -b 20 -t 1 -d {} -s 1 -o zip'.format(vid_path, flow_x_path, flow_y_path, dev_id)
-
-    os.system(cmd)
-    print 'warp on {} {} done'.format(vid_id, vid_name)
+    if warp:
+        print 'warp on {} {} done'.format(vid_id, vid_name)
+    else:
+        print '{} {} done'.format(vid_id, vid_name)
     return True
 
 
@@ -92,7 +78,9 @@ if __name__ == '__main__':
     vid_list = glob.glob(src_path+'/*.mp4')
     print len(vid_list)
     pool = Pool(num_worker)
-    if flow_type == 'tvl1':
-        pool.map(run_optical_flow, zip(vid_list, xrange(len(vid_list))))
-    elif flow_type == 'warp_tvl1':
-        pool.map(run_warp_optical_flow, zip(vid_list, xrange(len(vid_list))))
+
+    warp_mode = flow_type == 'warp_tvl1'
+    pool.map(
+        partial(run_optical_flow,
+                warp=warp_mode),
+        zip(vid_list, xrange(len(vid_list))))
