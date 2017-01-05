@@ -31,7 +31,7 @@ def dump_frames(vid_path):
     return file_list
 
 
-def run_optical_flow(vid_item, dev_id=0, warp=False):
+def run_optical_flow(vid_item, step=1, dev_id=0, warp=False):
     vid_path = vid_item[0]
     vid_id = vid_item[1]
     vid_name = vid_path.split('/')[-1].split('.')[0]
@@ -48,9 +48,9 @@ def run_optical_flow(vid_item, dev_id=0, warp=False):
     flow_y_path = '{}/flow_y'.format(out_full_path)
 
     if warp:
-        cmd = './build/extract_warp_gpu -f={} -x={} -y={} -b=20 -t=1 -d={} -s=1 -o=zip'.format(vid_path, flow_x_path, flow_y_path, dev_id)
+        cmd = './build/extract_warp_gpu -f={} -x={} -y={} -b=20 -t=1 -d={} -s={} -o=zip'.format(vid_path, flow_x_path, flow_y_path, dev_id, step)
     else:
-        cmd = './build/extract_gpu -f={} -x={} -y={} -i={} -b=20 -t=1 -d={} -s=1 -o=zip'.format(vid_path, flow_x_path, flow_y_path, image_path, dev_id)
+        cmd = './build/extract_gpu -f={} -x={} -y={} -i={} -b=20 -t=1 -d={} -s={} -o=zip'.format(vid_path, flow_x_path, flow_y_path, image_path, dev_id, step)
 
     os.system(cmd)
     if warp:
@@ -66,6 +66,7 @@ if __name__ == '__main__':
     parser.add_argument("out_dir")
     parser.add_argument("--num_worker", type=int, default=8)
     parser.add_argument("--flow_type", type=str, default='tvl1', choices=['tvl1', 'warp_tvl1'])
+    parser.add_argument("--step", type=int, default=1)
 
     args = parser.parse_args()
 
@@ -82,5 +83,6 @@ if __name__ == '__main__':
     warp_mode = flow_type == 'warp_tvl1'
     pool.map(
         partial(run_optical_flow,
+                step=args.step,
                 warp=warp_mode),
         zip(vid_list, xrange(len(vid_list))))
