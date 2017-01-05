@@ -3,6 +3,7 @@ __author__ = 'yjxiong'
 import cv2
 import glob
 import os
+import random
 from multiprocessing import Pool, current_process
 from functools import partial
 
@@ -31,7 +32,7 @@ def dump_frames(vid_path):
     return file_list
 
 
-def run_optical_flow(vid_item, step=1, dev_id=0, warp=False):
+def run_optical_flow(vid_item, step=1, num_gpus=4, warp=False):
     vid_path = vid_item[0]
     vid_id = vid_item[1]
     vid_name = vid_path.split('/')[-1].split('.')[0]
@@ -42,7 +43,7 @@ def run_optical_flow(vid_item, step=1, dev_id=0, warp=False):
         pass
 
     current = current_process()
-    dev_id = int(current._identity[0]) - 1
+    dev_id = random.choice(range(num_gpus))
     image_path = '{}/img'.format(out_full_path)
     flow_x_path = '{}/flow_x'.format(out_full_path)
     flow_y_path = '{}/flow_y'.format(out_full_path)
@@ -67,6 +68,7 @@ if __name__ == '__main__':
     parser.add_argument("--num_worker", type=int, default=8)
     parser.add_argument("--flow_type", type=str, default='tvl1', choices=['tvl1', 'warp_tvl1'])
     parser.add_argument("--step", type=int, default=1)
+    parser.add_argument("--num_gpus", type=int, default=4)
 
     args = parser.parse_args()
 
@@ -84,5 +86,6 @@ if __name__ == '__main__':
     pool.map(
         partial(run_optical_flow,
                 step=args.step,
-                warp=warp_mode),
+                warp=warp_mode,
+                num_gpus=args.num_gpus),
         zip(vid_list, xrange(len(vid_list))))
