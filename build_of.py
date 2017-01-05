@@ -1,6 +1,7 @@
 __author__ = 'yjxiong'
 
 import cv2
+import glob
 import os
 from multiprocessing import Pool, current_process
 
