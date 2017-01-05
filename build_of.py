@@ -56,8 +56,7 @@ if __name__ == '__main__':
     flow_type = args.flow_type
 
 
-    vid_list = glob.glob(src_path+'/*.mp4')
-    print len(vid_list)
+    vid_list = glob.glob(src_path + '/*.mp4')
     pool = Pool(num_worker)
 
     warp_mode = flow_type == 'warp_tvl1'
