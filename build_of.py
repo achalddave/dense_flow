@@ -1,6 +1,5 @@
 __author__ = 'yjxiong'
 
-import cv2
 import glob
 import os
 import random
@@ -9,27 +8,6 @@ from functools import partial
 
 import argparse
 out_path = ''
-
-
-def dump_frames(vid_path):
-    video = cv2.VideoCapture(vid_path)
-    vid_name = vid_path.split('/')[-1].split('.')[0]
-    out_full_path = os.path.join(out_path, vid_name)
-
-    fcount = int(video.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
-    try:
-        os.mkdir(out_full_path)
-    except OSError:
-        pass
-    file_list = []
-    for i in xrange(fcount):
-        ret, frame = video.read()
-        assert ret
-        cv2.imwrite('{}/{:06d}.jpg'.format(out_full_path, i), frame)
-        access_path = '{}/{:06d}.jpg'.format(vid_name, i)
-        file_list.append(access_path)
-    print '{} done'.format(vid_name)
-    return file_list
 
 
 def run_optical_flow(vid_item, step=1, num_gpus=4, warp=False):
